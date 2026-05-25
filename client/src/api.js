@@ -1,7 +1,7 @@
 import  axios from 'axios';
 
 const API =axios.create({
-    baseURL:"https://loan-management-system-kpvw.onrender.com|| http://localhost:5000/api",
+    baseURL: https://loan-management-system-kpvw.onrender.com
 });
 
 // har request mein token automatically lagao
