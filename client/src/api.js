@@ -1,8 +1,8 @@
 import  axios from 'axios';
 
 const API =axios.create({
-    baseURL:"http://localhost:5000/api",
-});
+    baseURL: "https://loan-management-system-kpvw.onrender.com/api"
+}); 
 
 // har request mein token automatically lagao
 API.interceptors.request.use((req)=>{

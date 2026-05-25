@@ -10,7 +10,10 @@ const app = express();
 
 // Middleware and cors fix
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: [
+    'http://localhost:3000',
+    'https://loan-management-system-jet-tau.vercel.app'
+  ],
   credentials:true
 }));
 app.use(express.json());
