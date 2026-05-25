@@ -16,6 +16,7 @@ export default function Dashboard() {
     try {
       const res = await API.get('/dashboard');
       setDashData(res.data);
+      toast.success("Dashboard Loaded");
     } catch (err) {
       console.log(err);
     } finally {
