@@ -11,7 +11,9 @@ const cloudinary = require('cloudinary').v2;
 // Get all customers
 router.get('/', auth, async (req, res) => {
   try {
-    const customers = await Customer.find().sort({ createdAt: -1 });
+    const customers = await Customer.find({
+      adminId: req.user.id  // ← Sirf is admin ke
+    }).sort({ createdAt: -1 });
     res.json(customers);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -38,10 +40,14 @@ router.post('/', auth, upload.single('aadhaarImage'), async (req, res) => {
     }
     
     if (!name || !phone) {
-      return res.status(400).json({ message: 'Name aur phone required hai' });
+      return res.status(400).json({ message: 'Name aur phone required' });
     }
 
-    const customer = new Customer({ name, phone, address, aadhaarImage,  aadhaarPublicId  });
+    const customer = new Customer({
+       adminId: req.user.id,  // ✅ Admin ID save karo
+       name, phone, address, 
+       aadhaarImage,  aadhaarPublicId  
+      });
     await customer.save();
     res.status(201).json({ message: 'Customer added', customer });
   } catch (err) {
@@ -52,8 +58,13 @@ router.post('/', auth, upload.single('aadhaarImage'), async (req, res) => {
 // Get single customer
 router.get('/:id', auth, async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id);
-    if (!customer) return res.status(404).json({ message: 'Not found' });
+    const customer = await Customer.findOne({
+      _id: req.params.id,
+      adminId: req.user.id  // ✅ Sirf apna
+    });
+    if (!customer){
+      return res.status(404).json({ message: 'Not found' });
+    }
     res.json(customer);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -70,7 +81,10 @@ router.put('/:id', auth, upload.single('aadhaarImage'), async (req, res) => {
     
     if (req.file) {
       // ✅ Purani image delete karo Cloudinary se
-      const customer = await Customer.findById(req.params.id);
+      const customer = await Customer.findOne({
+        _id: req.params.id,
+        adminId: req.user.id
+      });
       if (customer?.aadhaarPublicId) {
         await cloudinary.uploader.destroy(customer.aadhaarPublicId);
       }
@@ -78,8 +92,8 @@ router.put('/:id', auth, upload.single('aadhaarImage'), async (req, res) => {
       update.aadhaarPublicId = req.file.filename;
     }
 
-    const customer = await Customer.findByIdAndUpdate(
-      req.params.id, update, { new: true }
+    const customer = await Customer.findOneAndUpdate(
+      {_id: req.params.id, adminId:req.user.id}, update, { new: true }
     );
     res.json({ message: 'Updated', customer });
   } catch (err) {
@@ -90,7 +104,9 @@ router.put('/:id', auth, upload.single('aadhaarImage'), async (req, res) => {
 // ✅ Delete customer — loans aur payments bhi delete karo
 router.delete('/:id', auth, async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id);
+    const customer = await Customer.findOne({
+      _id: req.params.id,
+       adminId:req.user.id}); // only our
     if (!customer) {
       return res.status(404).json({ message: 'Customer not found' });
     }

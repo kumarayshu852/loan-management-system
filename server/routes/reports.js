@@ -4,28 +4,29 @@ const Loan = require('../models/Loan');
 const Payment = require('../models/Payment');
 const Customer = require('../models/Customer');
 const auth = require('../middleware/auth');
+const mongoose = require('mongoose');
 
 router.get('/', auth, async (req, res) => {
   try {
     const { from, to } = req.query;
+    const adminId = req.user.id;  // ✅
 
-    // Date filter banao
-    let dateFilter = {};
+    let dateFilter = { adminId: new mongoose.Types.ObjectId(adminId) };
     if (from && to) {
-      dateFilter = {
-        createdAt: {
-          $gte: new Date(from),
-          $lte: new Date(to + 'T23:59:59.999Z')
-        }
+      dateFilter.createdAt = {
+        $gte: new Date(from),
+        $lte: new Date(to + 'T23:59:59.999Z')
       };
     }
 
-    // Summary stats
-    const totalCustomers = await Customer.countDocuments();
-    const activeLoans = await Loan.countDocuments({ status: 'Active' });
-    const closedLoans = await Loan.countDocuments({ status: 'Closed' });
+    const totalCustomers = await Customer.countDocuments({ adminId });
+    const activeLoans = await Loan.countDocuments({
+      adminId, status: 'Active'
+    });
+    const closedLoans = await Loan.countDocuments({
+      adminId, status: 'Closed'
+    });
 
-    // Loan stats
     const loanStats = await Loan.aggregate([
       { $match: dateFilter },
       {
@@ -39,16 +40,18 @@ router.get('/', auth, async (req, res) => {
       }
     ]);
 
-    // Payment stats - mode wise
+    const paymentFilter = {
+      adminId: new mongoose.Types.ObjectId(adminId)
+    };
+    if (from && to) {
+      paymentFilter.paymentDate = {
+        $gte: new Date(from),
+        $lte: new Date(to + 'T23:59:59.999Z')
+      };
+    }
+
     const paymentModeStats = await Payment.aggregate([
-      ...(from && to ? [{
-        $match: {
-          paymentDate: {
-            $gte: new Date(from),
-            $lte: new Date(to + 'T23:59:59.999Z')
-          }
-        }
-      }] : []),
+      { $match: paymentFilter },
       {
         $group: {
           _id: '$paymentMode',
@@ -58,8 +61,8 @@ router.get('/', auth, async (req, res) => {
       }
     ]);
 
-    // Monthly payments (last 6 months)
     const monthlyPayments = await Payment.aggregate([
+      { $match: { adminId: new mongoose.Types.ObjectId(adminId) }},
       {
         $group: {
           _id: {
@@ -74,7 +77,6 @@ router.get('/', auth, async (req, res) => {
       { $limit: 6 }
     ]);
 
-    // Customer wise loans
     const customerWise = await Loan.find(dateFilter)
       .populate('customerId', 'name phone')
       .sort({ createdAt: -1 });
@@ -95,10 +97,8 @@ router.get('/', auth, async (req, res) => {
       monthlyPayments,
       customerWise
     });
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
-
 module.exports = router;

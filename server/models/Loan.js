@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const loanSchema = new mongoose.Schema({
+  adminId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true  // ✅ Har loan ka admin
+  },
   customerId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Customer',

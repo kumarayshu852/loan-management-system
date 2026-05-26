@@ -19,7 +19,7 @@ export default function LoanDetails() {
   useEffect(() => {
     fetchLoan();
     fetchPayments();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchLoan = async () => {
@@ -113,18 +113,18 @@ export default function LoanDetails() {
               </span>
             </div>
             {loan?.customerId?.aadhaarImage &&
-             loan.customerId.aadhaarImage.startsWith('http') && (
-              <div className="flex justify-between">
-                <span className="text-gray-500">Aadhaar</span>
-                
+              loan.customerId.aadhaarImage.startsWith('http') && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Aadhaar</span>
+
                   <a href={loan.customerId.aadhaarImage}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-600 hover:underline">
-                  View Image
-                </a>
-              </div>
-            )}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 hover:underline">
+                    View Image
+                  </a>
+                </div>
+              )}
           </div>
         </div>
 
@@ -147,52 +147,80 @@ export default function LoanDetails() {
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Months Running</span>
-              <span className="font-medium">
-                {loan?.months} months
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Total Interest</span>
-              <span className="font-medium text-orange-500">
-                ₹{loan?.totalInterest?.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between border-t pt-2">
-              <span className="text-gray-500">Total Payable</span>
-              <span className="font-bold">
-                ₹{loan?.totalPayable?.toLocaleString()}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Total Paid</span>
+              <span className="text-gray-500">Total Paid So Far</span>
               <span className="font-medium text-green-600">
                 ₹{loan?.totalPaid?.toLocaleString()}
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-500">Remaining</span>
-              <span className="font-bold text-red-500 text-base">
-                ₹{loan?.remaining?.toLocaleString()}
+              <span className="text-gray-500">Total Interest Charged</span>
+              <span className="font-medium text-orange-500">
+                ₹{loan?.totalInterest?.toLocaleString()}
               </span>
             </div>
+
+            {/* ✅ Sirf Active loan pe dikhao */}
+            {loan?.status === 'Active' && (
+              <div className="bg-orange-50 rounded-lg p-3 space-y-1">
+                <p className="text-orange-600 font-semibold text-xs mb-2">
+                  Current Due (Reducing Balance)
+                </p>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Remaining Principal</span>
+                  <span className="font-medium">
+                    ₹{loan?.remaining?.toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">
+                    Months Since Last Payment
+                  </span>
+                  <span className="font-medium">{loan?.months} months</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Current Interest</span>
+                  <span className="font-medium text-orange-500">
+                    ₹{(loan?.currentInterest || 0).toLocaleString()}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t
+                        border-orange-200 pt-1">
+                  <span className="text-gray-700 font-semibold">
+                    Total Due Now
+                  </span>
+                  <span className="font-bold text-red-500 text-base">
+                    ₹{(loan?.totalDue || 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* ✅ Closed loan pe success message */}
+            {loan?.status === 'Closed' && (
+              <div className="bg-green-50 rounded-lg p-3 text-center">
+                <p className="text-green-600 font-bold text-sm">
+                  ✅ Loan Fully Paid!
+                </p>
+                <p className="text-green-500 text-xs mt-1">
+                  Total Paid: ₹{loan?.totalPaid?.toLocaleString()}
+                </p>
+              </div>
+            )}
+
             <div className="flex justify-between">
               <span className="text-gray-500">Status</span>
-              <span className={`px-3 py-1 rounded-full text-xs
-                font-semibold
-                ${loan?.status === 'Active'
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold
+        ${loan?.status === 'Active'
                   ? 'bg-green-100 text-green-700'
                   : loan?.status === 'Closed'
-                  ? 'bg-gray-100 text-gray-600'
-                  : 'bg-yellow-100 text-yellow-700'}`}>
+                    ? 'bg-gray-100 text-gray-600'
+                    : 'bg-yellow-100 text-yellow-700'}`}>
                 {loan?.status}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Reason</span>
-              <span className="font-medium">
-                {loan?.reason || '—'}
-              </span>
+              <span className="font-medium">{loan?.reason || '—'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Loan Date</span>
@@ -242,14 +270,14 @@ export default function LoanDetails() {
               {payments.length === 0 && (
                 <tr>
                   <td colSpan="5"
-                      className="text-center py-6 text-gray-400">
+                    className="text-center py-6 text-gray-400">
                     No payments yet
                   </td>
                 </tr>
               )}
               {payments.map((p, i) => (
                 <tr key={p._id}
-                    className="border-b last:border-0 hover:bg-gray-50">
+                  className="border-b last:border-0 hover:bg-gray-50">
                   <td className="px-4 py-3 text-gray-400">{i + 1}</td>
                   <td className="px-4 py-3">
                     {new Date(p.paymentDate)
