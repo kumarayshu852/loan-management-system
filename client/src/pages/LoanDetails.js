@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import {jsPDF} from 'jspdf'
 import API from '../api';
 import Layout from '../components/Layout';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+
 
 export default function LoanDetails() {
   const [loan, setLoan] = useState(null);
@@ -15,6 +17,241 @@ export default function LoanDetails() {
   });
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const generatePDF = () => {
+  const doc = new jsPDF();
+
+  // ✅ Colors
+  const blue = [29, 78, 216];
+  const gray = [100, 100, 100];
+  const black = [0, 0, 0];
+  const green = [22, 163, 74];
+  const red = [220, 38, 38];
+
+  // ✅ Header Background
+  doc.setFillColor(...blue);
+  doc.rect(0, 0, 210, 35, 'F');
+
+  // ✅ Header Text
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(22);
+  doc.setFont('helvetica', 'bold');
+  doc.text('LOAN MANAGEMENT SYSTEM', 105, 15, { align: 'center' });
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Payment Receipt', 105, 25, { align: 'center' });
+
+  // ✅ Receipt Info
+  doc.setTextColor(...gray);
+  doc.setFontSize(9);
+  doc.text(
+    `Receipt Date: ${new Date().toLocaleDateString('en-IN')}`,
+    15, 43
+  );
+  doc.text(
+    `Receipt No: LMS-${loan._id.slice(-6).toUpperCase()}`,
+    195, 43,
+    { align: 'right' }
+  );
+
+  // ✅ Divider
+  doc.setDrawColor(...blue);
+  doc.setLineWidth(0.5);
+  doc.line(15, 47, 195, 47);
+
+  // ✅ Customer Info Section
+  doc.setFillColor(245, 247, 255);
+  doc.roundedRect(15, 52, 85, 45, 3, 3, 'F');
+
+  doc.setTextColor(...blue);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('CUSTOMER DETAILS', 22, 62);
+
+  doc.setTextColor(...gray);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Name:', 22, 72);
+  doc.text('Phone:', 22, 80);
+  doc.text('Address:', 22, 88);
+
+  doc.setTextColor(...black);
+  doc.setFont('helvetica', 'bold');
+  doc.text(loan?.customerId?.name || 'N/A', 55, 72);
+  doc.text(loan?.customerId?.phone || 'N/A', 55, 80);
+  doc.text(
+    (loan?.customerId?.address || 'N/A').substring(0, 25),
+    55, 88
+  );
+
+  // ✅ Loan Info Section
+  doc.setFillColor(245, 247, 255);
+  doc.roundedRect(110, 52, 85, 45, 3, 3, 'F');
+
+  doc.setTextColor(...blue);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.text('LOAN DETAILS', 117, 62);
+
+  doc.setTextColor(...gray);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Loan Amount:', 117, 72);
+  doc.text('Interest Rate:', 117, 80);
+  doc.text('Loan Date:', 117, 88);
+
+  doc.setTextColor(...black);
+  doc.setFont('helvetica', 'bold');
+  doc.text(
+    `Rs. ${loan?.amount?.toLocaleString()}`,
+    165, 72
+  );
+  doc.text(`${loan?.interestRate}% / month`, 165, 80);
+  doc.text(
+    new Date(loan?.date).toLocaleDateString('en-IN'),
+    165, 88
+  );
+
+  // ✅ Summary Section
+  doc.setFillColor(...blue);
+  doc.roundedRect(15, 103, 180, 28, 3, 3, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+
+  doc.text('Total Paid', 35, 114, { align: 'center' });
+  doc.text('Total Interest', 80, 114, { align: 'center' });
+  doc.text('Remaining', 130, 114, { align: 'center' });
+  doc.text('Status', 175, 114, { align: 'center' });
+
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+
+  doc.text(
+    `Rs.${loan?.totalPaid?.toLocaleString()}`,
+    35, 124, { align: 'center' }
+  );
+  doc.text(
+    `Rs.${loan?.totalInterest?.toLocaleString()}`,
+    80, 124, { align: 'center' }
+  );
+  doc.text(
+    `Rs.${loan?.remaining?.toLocaleString()}`,
+    130, 124, { align: 'center' }
+  );
+  doc.text(loan?.status || 'Active', 175, 124, { align: 'center' });
+
+  // ✅ Payment History Table
+  doc.setTextColor(...blue);
+  doc.setFontSize(11);
+  doc.setFont('helvetica', 'bold');
+  doc.text('PAYMENT HISTORY', 15, 142);
+
+  doc.setDrawColor(...blue);
+  doc.line(15, 145, 195, 145);
+
+  // Table Header
+  doc.setFillColor(...blue);
+  doc.rect(15, 147, 180, 8, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('#', 22, 153);
+  doc.text('Date', 45, 153);
+  doc.text('Amount', 95, 153);
+  doc.text('Mode', 135, 153);
+  doc.text('Note', 165, 153);
+
+  // Table Rows
+  let yPos = 162;
+  payments.forEach((payment, index) => {
+    // Alternate row color
+    if (index % 2 === 0) {
+      doc.setFillColor(245, 247, 255);
+      doc.rect(15, yPos - 6, 180, 9, 'F');
+    }
+
+    doc.setTextColor(...black);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+
+    doc.text(String(index + 1), 22, yPos);
+    doc.text(
+      new Date(payment.paymentDate).toLocaleDateString('en-IN'),
+      45, yPos
+    );
+
+    doc.setTextColor(...green);
+    doc.setFont('helvetica', 'bold');
+    doc.text(
+      `Rs. ${payment.paidAmount?.toLocaleString()}`,
+      95, yPos
+    );
+
+    doc.setTextColor(...black);
+    doc.setFont('helvetica', 'normal');
+    doc.text(payment.paymentMode || 'Cash', 135, yPos);
+    doc.text(
+      (payment.note || '—').substring(0, 15),
+      165, yPos
+    );
+
+    yPos += 10;
+  });
+
+  // ✅ Footer Line
+  doc.setDrawColor(...blue);
+  doc.line(15, yPos + 5, 195, yPos + 5);
+
+  // ✅ Total at bottom
+  doc.setFillColor(245, 247, 255);
+  doc.rect(130, yPos + 8, 65, 12, 'F');
+  doc.setTextColor(...gray);
+  doc.setFontSize(9);
+  doc.text('Total Paid:', 135, yPos + 16);
+  doc.setTextColor(...green);
+  doc.setFont('helvetica', 'bold');
+  doc.text(
+    `Rs. ${loan?.totalPaid?.toLocaleString()}`,
+    190, yPos + 16,
+    { align: 'right' }
+  );
+
+  // ✅ Status Badge
+  if (loan?.status === 'Closed') {
+    doc.setFillColor(...green);
+    doc.roundedRect(75, yPos + 8, 40, 12, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.text('LOAN CLOSED', 95, yPos + 16, { align: 'center' });
+  } else {
+    doc.setFillColor(...red);
+    doc.roundedRect(75, yPos + 8, 40, 12, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.text('ACTIVE', 95, yPos + 16, { align: 'center' });
+  }
+
+  // ✅ Footer
+  doc.setTextColor(...gray);
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'normal');
+  doc.text(
+    'This is a computer generated receipt.',
+    105, yPos + 30,
+    { align: 'center' }
+  );
+
+  // ✅ Save PDF
+  doc.save(
+    `Receipt-${loan?.customerId?.name}-${Date.now()}.pdf`
+  );
+};
+
+  
 
   useEffect(() => {
     fetchLoan();
@@ -238,6 +475,12 @@ export default function LoanDetails() {
           <h3 className="text-base font-bold text-gray-800">
             💳 Payment History
           </h3>
+          <div className='flex gap-2'>
+            {/* Print Receipt Button*/}
+            <button onClick={generatePDF} className='bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-green-700 transition flex items-center gap-1'>
+               🖨️ Print Receipt
+            </button>
+          
           {loan?.status !== 'Closed' && (
             <button
               onClick={() => setShowModal(true)}
@@ -247,6 +490,7 @@ export default function LoanDetails() {
               + Add Payment
             </button>
           )}
+        </div>
         </div>
 
         <div className="overflow-x-auto">
